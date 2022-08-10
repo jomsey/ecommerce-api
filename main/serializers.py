@@ -1,6 +1,8 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from . models import Product, ProductCategory, ProductReview,ProductSpecification,Promotion
+from . models import (Cart, FeaturedProduct, 
+                      Product, ProductCategory, ProductInstance,
+                      ProductReview,ProductSpecification,
+                      Promotion,Order,Customer)
 
 
 
@@ -8,7 +10,7 @@ class ProductSerializer(serializers.ModelSerializer):
     discounted_price = serializers.SerializerMethodField('get_discounted_price')
     class Meta:
         model = Product
-        fields = ['id','name','price','description','image_url','discount','discounted_price','category_id']
+        fields = ['id','name','price','description','image_url','discount','discounted_price','promotion','category']
         
     def get_discounted_price(self,product:Product):
         discount = (product.discount/100)*product.price
@@ -61,3 +63,39 @@ class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = ['id','name','description','starting_date','ending_on']
+        
+        
+class FeaturedProductSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+    class Meta:
+        model = FeaturedProduct
+        fields =[ 'product',]
+        
+        
+class ProductInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductInstance
+        fields = ['product','product_uuid','product_count',]
+       
+    def create(self,validated_data):
+        cart_pk =self.context.get('cart_pk')
+        return ProductInstance.objects.create(cart_id=cart_pk,**validated_data)
+
+        
+class CartSerializer(serializers.ModelSerializer):
+    cart_uuid = serializers.UUIDField(read_only = True)
+    class Meta:
+        model = Cart
+        fields =['cart_uuid',]
+
+
+class OrderSerializer(serializers.ModelSerializer):
+     class Meta:
+        model = Order
+        fields =['customer','cart','order_id','status']
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['profile','phone_number','address']

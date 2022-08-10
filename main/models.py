@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from uuid import uuid4
 
 class Cart(models.Model):
-    product = models.ForeignKey('ProductInstance',on_delete=models.SET_NULL,null=True) #product instance to be added to the cart 
+    date_created = models.DateTimeField(auto_now=True)
     cart_uuid = models.UUIDField(primary_key=True,default=uuid4)
 
 
@@ -25,7 +25,7 @@ class FeaturedProduct(models.Model):
     product = models.ForeignKey('Product',on_delete=models.CASCADE)
     
     def __str__(self) :
-        return self.product.name
+        return str(self.product)
     
       
 class Product(models.Model):
@@ -46,9 +46,10 @@ class ProductInstance(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE)#product bought by customer
     product_uuid = models.UUIDField(primary_key=True,editable=False,default=uuid4) # #unique product id
     product_count = models.PositiveIntegerField(verbose_name='number of product',default=1)
+    cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True)
     
     def __str__(self):
-        return self.product.name
+        return str(self.product)
     
     
 class ProductCategory(models.Model):
@@ -103,8 +104,9 @@ class Order(models.Model):
         ('D','Delivered')
     ]
     
+    customer = models.ForeignKey(Customer,on_delete=models.CASCADE,null=True)
     date_made = models.DateTimeField(auto_now_add=True)
-    order_cart = models.ForeignKey(Cart,on_delete=models.PROTECT,null=True)#contains products ordered
+    cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True)#contains products ordered
     order_id = models.UUIDField(primary_key=True,editable=False,default=uuid4)
     status = models.CharField(max_length=1,choices=STATUS,default="P")
     
