@@ -1,5 +1,7 @@
 from django.db import models
+from django.db.models.signals import post_save
 from django.contrib.auth.models import User
+from django.dispatch import receiver
 from uuid import uuid4
 
 class Cart(models.Model):
@@ -11,14 +13,33 @@ class Customer(models.Model):
     profile = models.OneToOneField(User,on_delete=models.CASCADE,primary_key=True)
     phone_number = models.CharField(max_length=10)
     address = models.CharField(max_length=50,null=True)
-    wish_list = models.OneToOneField('CustomerWishList',on_delete=models.PROTECT)
     
     def __str__(self):
         return self.profile.username
+
+    @receiver(post_save,sender=User)
+    def create_customer(sender,instance,created,**kwargs):
+        if created:
+            Customer.objects.create(profile=instance)
+
+    @receiver(post_save,sender=User)
+    def save_customer(sender,instance,**kwargs):
+        instance.save
     
 
+
 class CustomerWishList(models.Model):
-    product = models.ForeignKey('ProductInstance',on_delete=models.SET_NULL,null=True,blank=True)
+    customer = models.OneToOneField(Customer,on_delete=models.CASCADE,null=True)
+
+    @receiver(post_save,sender=Customer)
+    def create_customer_wish_list(sender,instance,created,**kwargs):
+        if created:
+            CustomerWishList.objects.create(customer=instance)
+
+    @receiver(post_save,sender=User)
+    def save_customer(sender,instance,**kwargs):
+        instance.save
+    
    
     
 class FeaturedProduct(models.Model):
@@ -47,6 +68,7 @@ class ProductInstance(models.Model):
     product_uuid = models.UUIDField(primary_key=True,editable=False,default=uuid4) # #unique product id
     product_count = models.PositiveIntegerField(verbose_name='number of product',default=1)
     cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True)
+    wish_list =  models.ForeignKey(CustomerWishList,on_delete=models.CASCADE,blank=True,null=True,related_name='products')
     
     def __str__(self):
         return str(self.product)
@@ -88,7 +110,7 @@ class ProductReview(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE) #product being reviewed
     date_made = models.DateField(auto_now_add=True)
     review = models.TextField()
-    rating = models.PositiveSmallIntegerField(verbose_name='product_rating',null=True,choices=RATE_CHOICES,default=RATE_CHOICES[2][1])
+    rating = models.PositiveSmallIntegerField(verbose_name='product_rating',choices=RATE_CHOICES,default=RATE_CHOICES[2][1])
     
     def __str__(self) :  
         #return the first 30 characters of the product name
@@ -109,6 +131,7 @@ class Order(models.Model):
     cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True)#contains products ordered
     order_id = models.UUIDField(primary_key=True,editable=False,default=uuid4)
     status = models.CharField(max_length=1,choices=STATUS,default="P")
+    is_canceled = models.BooleanField(default=False)
     
     def __str__(self):
         return str(self.order_id)

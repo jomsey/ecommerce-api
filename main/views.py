@@ -1,22 +1,24 @@
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework import permissions,mixins,status
+from django.shortcuts import get_object_or_404
 from main.models import (Cart, FeaturedProduct, 
                          Product, ProductInstance, 
                          ProductReview,ProductCategory,
                          ProductSpecification,Promotion,
-                         Order,Customer)
-
+                         Order,Customer,CustomerWishList)
+from main import permissions as base_p
 from main.serializers import (CartSerializer, FeaturedProductSerializer,
                               ProductInstanceSerializer, PromotionSerializer,
                               ProductCategorySerializer, ProductReviewSerializer,
                               ProductSerializer,ProductSpecificationSerializer,
-                               OrderSerializer,CustomerSerializer
+                               OrderSerializer,CustomerSerializer,CustomerWishListSerializer
     )
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -129,15 +131,65 @@ class CartViewSet(mixins.CreateModelMixin,
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
-
+    
 class OrderViewSet(ModelViewSet):
-    queryset = Order.objects.all()
+    """
+    Order created by user.
+    For user to create an order,should be authenticated.
+    Order consists a cart with product instances.
+    A user a can create more than one orders.
+    User cannot make an order with an empty cart
+    """
+    
     serializer_class = OrderSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # def get_cart_items_count(self):
+    #     order = Order.objects.last()
+    #     if order.cart:
+    #         cart_items_count = order.cart.productinstance_set.all()
+    #         print(cart_items_count)
+
+    #         if cart_items_count:
+    #             self.kwargs['cart_items_count'] =  cart_items_count
+    #             return
+    #     return Response({'Error':'Cannot create an order with an empty cart'})
+
+
+
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['customer_pk'] = self.kwargs.get('customer_pk')
+        return context
+
+    def get_queryset(self):
+        return Order.objects.select_related('cart','customer').filter(customer_id=self.kwargs.get('customer_pk'))
+
     
     
-class CustomerViewSet(mixins.CreateModelMixin,
+class CustomerViewSet(
                       mixins.RetrieveModelMixin,
                       mixins.UpdateModelMixin,
                      GenericViewSet):
     queryset = Customer.objects.all()
     serializer_class =CustomerSerializer
+
+
+class CustomerWishListViewSet(
+                      mixins.RetrieveModelMixin,
+                     GenericViewSet):
+    """
+    create endpoint not provided because customer wishlist is created while creating a customer
+    """
+    queryset = CustomerWishList.objects.all()
+    serializer_class =CustomerWishListSerializer
+
+    # def get_queryset(self):
+    #     return CustomerWishList.objects.get(customer_id=self.kwargs['customer_pk'])
+
+
+
+
+
+

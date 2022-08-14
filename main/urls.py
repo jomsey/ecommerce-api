@@ -7,7 +7,7 @@ from django.urls import path,include
 router = routers.SimpleRouter()
 
 #parent routers
-router.register(viewset=views.CustomerViewSet,prefix='customers')
+router.register(viewset=views.CustomerViewSet,prefix='customer')
 router.register(viewset = views.ProductViewSet,prefix = 'products',basename='products')
 router.register(viewset=views.FeaturedProductViewSet,prefix='featured_products')
 router.register(viewset=views.ProductCategoryViewSet,prefix='categories')
@@ -32,8 +32,9 @@ cart_routers = routers.NestedSimpleRouter(router,'cart',lookup='cart')
 cart_routers.register('cart_products',views.ProductInstanceViewSet,basename='products_instances')
 
 #customer routers
-customer_routers  = routers.NestedSimpleRouter(router,'customers',lookup='customer')
-customer_routers.register('orders',views.OrderViewSet)
+customer_routers  = routers.NestedSimpleRouter(router,'customer',lookup='customer')
+customer_routers.register('orders',views.OrderViewSet,basename='customer_orders')
+customer_routers.register('wish_list',views.CustomerWishListViewSet,basename='customer_wish_list')
 
 
 urlpatterns=[ 

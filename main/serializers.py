@@ -2,7 +2,7 @@ from rest_framework import serializers
 from . models import (Cart, FeaturedProduct, 
                       Product, ProductCategory, ProductInstance,
                       ProductReview,ProductSpecification,
-                      Promotion,Order,Customer)
+                      Promotion,Order,Customer,CustomerWishList)
 
 
 
@@ -90,12 +90,29 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-     class Meta:
+    customer = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
         model = Order
-        fields =['customer','cart','order_id','status']
+        fields =['customer','cart','order_id','status','date_made']
+
+
+    def create(self, validated_data):
+        customer_pk = self.context['customer_pk']
+        user = self.context['request'].user #current logged user       
+        return Order.objects.create(customer_id = customer_pk, **validated_data)
 
 
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
         fields = ['profile','phone_number','address']
+
+    
+class CustomerWishListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomerWishList
+        fields =['id','customer_id','products']
+
+
+
