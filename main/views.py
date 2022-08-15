@@ -17,7 +17,8 @@ from main.serializers import (CartSerializer, FeaturedProductSerializer,
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                          base_p.CustomerReadOnly]
     
     
     def get_serializer_context(self):
@@ -74,7 +75,7 @@ class ProductSpecificationViewSet(mixins.CreateModelMixin,
                                  GenericViewSet):
     
     """Product specification objects should not be listed or deleted
-       Only registered and authorised users can add,edit or delete a product specification
+       Only registered and authorized users can add,edit or delete a product specification
     """
 
     queryset = ProductSpecification.objects.all()
@@ -83,7 +84,7 @@ class ProductSpecificationViewSet(mixins.CreateModelMixin,
 
     def get_serializer_context(self):
         """
-        adding product_pk to the context to be used in retriving  a product's specification
+        adding product_pk to the context to be used in retrieving  a product's specification
         """
         context = super().get_serializer_context()
         context['product_pk'] = self.kwargs.get('product_pk')
@@ -115,7 +116,7 @@ class ProductInstanceViewSet(ModelViewSet):
 
     def get_queryset(self):
         """
-        getting products from a paticular cart
+        getting products from a particular cart
         """
         cart_pk=self.kwargs.get('cart_pk')
         return ProductInstance.objects.filter(cart_id=cart_pk).all()
@@ -144,20 +145,6 @@ class OrderViewSet(ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    # def get_cart_items_count(self):
-    #     order = Order.objects.last()
-    #     if order.cart:
-    #         cart_items_count = order.cart.productinstance_set.all()
-    #         print(cart_items_count)
-
-    #         if cart_items_count:
-    #             self.kwargs['cart_items_count'] =  cart_items_count
-    #             return
-    #     return Response({'Error':'Cannot create an order with an empty cart'})
-
-
-
-
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['customer_pk'] = self.kwargs.get('customer_pk')
@@ -167,13 +154,18 @@ class OrderViewSet(ModelViewSet):
         return Order.objects.select_related('cart','customer').filter(customer_id=self.kwargs.get('customer_pk'))
 
     
-    
 class CustomerViewSet(
                       mixins.RetrieveModelMixin,
+                      mixins.ListModelMixin,
                       mixins.UpdateModelMixin,
                      GenericViewSet):
-    queryset = Customer.objects.all()
+  
     serializer_class =CustomerSerializer
+    
+    def get_queryset(self):
+        return Customer.objects.filter(profile = 3)
+          
+        
 
 
 class CustomerWishListViewSet(
@@ -185,9 +177,7 @@ class CustomerWishListViewSet(
     queryset = CustomerWishList.objects.all()
     serializer_class =CustomerWishListSerializer
 
-    # def get_queryset(self):
-    #     return CustomerWishList.objects.get(customer_id=self.kwargs['customer_pk'])
-
+    
 
 
 

@@ -7,7 +7,7 @@ from django.urls import path,include
 router = routers.SimpleRouter()
 
 #parent routers
-router.register(viewset=views.CustomerViewSet,prefix='customer')
+router.register(viewset=views.CustomerViewSet,prefix='customer',basename='customer')
 router.register(viewset = views.ProductViewSet,prefix = 'products',basename='products')
 router.register(viewset=views.FeaturedProductViewSet,prefix='featured_products')
 router.register(viewset=views.ProductCategoryViewSet,prefix='categories')
