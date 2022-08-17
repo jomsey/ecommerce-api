@@ -1,8 +1,8 @@
 asgiref==3.5.2
 Django==4.0.6
-rest_framework_swagger
+rest_framework_swagger==2.2.0
 djangorestframework==3.13.1
-djangorestframework-simplejwt
+djangorestframework-simplejwt==4.8.0
 pytz==2022.1
 sqlparse==0.4.2
 tzdata==2022.1
