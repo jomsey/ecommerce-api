@@ -12,7 +12,7 @@ router.register(viewset = views.ProductViewSet,prefix = 'products',basename='pro
 router.register(viewset=views.FeaturedProductViewSet,prefix='featured_products')
 router.register(viewset=views.ProductCategoryViewSet,prefix='categories')
 router.register(viewset=views.PromotionViewSet,prefix='promotions')
-router.register(viewset=views.CartViewSet,prefix='cart')
+router.register(viewset=views.CartViewSet,prefix='cart',basename='cart')
 router.register(viewset=views.CustomerWishListViewSet,prefix='wish_list',basename='wish_list')
 
 #product routers

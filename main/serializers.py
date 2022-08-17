@@ -20,6 +20,7 @@ class ProductSerializer(serializers.ModelSerializer):
         category_pk = self.context.get('category_pk')
         promotion_pk = self.context.get('promotion_pk')
 
+
         if category_pk:
             #add a  product to a category
             return  Product.objects.create(category_id=category_pk,**validated_data)
@@ -93,7 +94,20 @@ class CartSerializer(serializers.ModelSerializer):
     cart_uuid = serializers.UUIDField(read_only = True)
     class Meta:
         model = Cart
-        fields =['cart_uuid',]
+        fields =['cart_uuid','date_created']
+
+
+    def create(self,validated_data):
+     
+        request = self.context.get('request')
+        cart = Cart.objects.create()
+
+        #create a cart uuid seesion
+        request.session['cart_uuid'] = str(cart.cart_uuid)
+        request.session.modified = True
+        return cart
+
+
 
 
 class OrderSerializer(serializers.ModelSerializer):

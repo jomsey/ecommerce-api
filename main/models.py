@@ -59,6 +59,7 @@ class Product(models.Model):
     product_uuid = models.UUIDField(editable=False,default=uuid4) # #unique product id
     promotion =models.ForeignKey('Promotion',on_delete=models.SET_NULL,null=True,blank=True)
     #trader = models.ForeignKey('Trader',on_delete=models.CASCADE)
+    #date_added = models.DateField(auto_now_add=True)
     
     def __str__(self):
         return self.name

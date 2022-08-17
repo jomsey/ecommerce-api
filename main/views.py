@@ -1,3 +1,4 @@
+import uuid
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework import permissions,mixins,status
@@ -8,6 +9,7 @@ from main.models import (Cart, FeaturedProduct,
                          ProductSpecification,Promotion,
                          Order,Customer,CustomerWishList)
 from main import permissions as base_p
+from main import filters
 from main.serializers import (CartSerializer, FeaturedProductSerializer,
                               ProductInstanceSerializer, PromotionSerializer,
                               ProductCategorySerializer, ProductReviewSerializer,
@@ -17,6 +19,8 @@ from main.serializers import (CartSerializer, FeaturedProductSerializer,
 
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
+    filterset_class = filters.ProductFilter
+    search_fields = ['name', 'category__name','promotion__name']
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,
                           base_p.CustomerReadOnly]
     
@@ -38,7 +42,7 @@ class ProductViewSet(ModelViewSet):
         if promotion_pk:
             #use this queryset to get products in a particular promotion
             return Product.objects.filter(promotion_id=promotion_pk).select_related('promotion')
-        return Product.objects.all()
+        return Product.objects.select_related('promotion','category').all()
             
            
 class ProductReviewViewSet(ModelViewSet):
@@ -134,8 +138,19 @@ class CartViewSet(mixins.CreateModelMixin,
     """
     Anonymous users should be able to create a shopping cart
     """
-    queryset = Cart.objects.all()
     serializer_class = CartSerializer
+
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+
+    def get_queryset(self):
+        cart_uuid = self.request.session.get('cart_uuid')
+        x=uuid.UUID(cart_uuid)
+        return Cart.objects.get(cart_uuid=x)
 
     
 class OrderViewSet(ModelViewSet):
