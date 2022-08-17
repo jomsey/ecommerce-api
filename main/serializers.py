@@ -79,6 +79,13 @@ class ProductInstanceSerializer(serializers.ModelSerializer):
        
     def create(self,validated_data):
         cart_pk =self.context.get('cart_pk')
+        wish_list_pk = self.context.get('wish_list_pk')
+
+        if wish_list_pk:
+            #adding product to wishlist
+            return ProductInstance.objects.create(wishlist_id=wish_list_pk,**validated_data)
+
+        #adding product to a cart
         return ProductInstance.objects.create(cart_id=cart_pk,**validated_data)
 
         

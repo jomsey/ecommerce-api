@@ -58,6 +58,7 @@ class Product(models.Model):
     discount = models.PositiveIntegerField(default=0)
     product_uuid = models.UUIDField(editable=False,default=uuid4) # #unique product id
     promotion =models.ForeignKey('Promotion',on_delete=models.SET_NULL,null=True,blank=True)
+    #trader = models.ForeignKey('Trader',on_delete=models.CASCADE)
     
     def __str__(self):
         return self.name
@@ -140,8 +141,9 @@ class Order(models.Model):
 class Promotion(models.Model):
     name = models.CharField(max_length=150)
     description=models.TextField(null=True)
-    starting_date=models.DateTimeField(auto_created=True)#will change on depkoy
+    starting_date=models.DateTimeField(auto_created=True)#will change on deploy
     ending_on = models.DateTimeField(auto_created=True)
+    #trader = models.ForeignKey('Trader',on_delete=models.CASCADE)
     
     def __str__ (self):
         return self.name
@@ -152,4 +154,5 @@ class Trader(models.Model):
     products = models.ManyToManyField(Product)
     phone_number = models.CharField(max_length=15)
     address = models.CharField(max_length=150)
+
     

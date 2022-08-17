@@ -13,6 +13,7 @@ router.register(viewset=views.FeaturedProductViewSet,prefix='featured_products')
 router.register(viewset=views.ProductCategoryViewSet,prefix='categories')
 router.register(viewset=views.PromotionViewSet,prefix='promotions')
 router.register(viewset=views.CartViewSet,prefix='cart')
+router.register(viewset=views.CustomerWishListViewSet,prefix='wish_list',basename='wish_list')
 
 #product routers
 product_routers = routers.NestedSimpleRouter(router,'products',lookup='product')
@@ -25,7 +26,7 @@ category_routers.register('products',views.ProductViewSet,basename='products')
 
 #promotions routers 
 promotion_routers = routers.NestedSimpleRouter(router,'promotions',lookup='promotion')
-promotion_routers.register('products',views.ProductViewSet,basename='products')
+promotion_routers.register('promotion_products',views.ProductViewSet,basename='products')
 
 #cart routers
 cart_routers = routers.NestedSimpleRouter(router,'cart',lookup='cart')
@@ -34,7 +35,11 @@ cart_routers.register('cart_products',views.ProductInstanceViewSet,basename='pro
 #customer routers
 customer_routers  = routers.NestedSimpleRouter(router,'customer',lookup='customer')
 customer_routers.register('orders',views.OrderViewSet,basename='customer_orders')
-customer_routers.register('wish_list',views.CustomerWishListViewSet,basename='customer_wish_list')
+
+#wish list routers
+wish_list_routers = routers.NestedSimpleRouter(router,'wish_list',lookup='wish_list')
+wish_list_routers.register('wish_list_products',views.ProductInstanceViewSet,basename='products_instances')
+
 
 
 urlpatterns=[ 
@@ -43,7 +48,8 @@ urlpatterns=[
              path('',include(category_routers.urls)),
              path('',include(promotion_routers.urls)),
              path('',include(cart_routers.urls)),
-             path('',include(customer_routers.urls))
+             path('',include(customer_routers.urls)),
+             path('',include(wish_list_routers.urls))
              
              ]
 

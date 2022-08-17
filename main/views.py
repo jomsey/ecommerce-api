@@ -58,7 +58,7 @@ class ProductReviewViewSet(ModelViewSet):
 class ProductCategoryViewSet(ModelViewSet):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
     
     
     def destroy(self, request, *args, **kwargs):
@@ -80,7 +80,7 @@ class ProductSpecificationViewSet(mixins.CreateModelMixin,
 
     queryset = ProductSpecification.objects.all()
     serializer_class = ProductSpecificationSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
 
     def get_serializer_context(self):
         """
@@ -94,13 +94,13 @@ class ProductSpecificationViewSet(mixins.CreateModelMixin,
 class PromotionViewSet(ModelViewSet):
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
     
     
 class FeaturedProductViewSet(ModelViewSet):
     queryset = FeaturedProduct.objects.select_related('product').all()
     serializer_class = FeaturedProductSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
     
     
 class ProductInstanceViewSet(ModelViewSet):
@@ -115,6 +115,11 @@ class ProductInstanceViewSet(ModelViewSet):
         return context
 
     def get_queryset(self):
+        wish_list_pk = self.kwargs.get('wish_list_pk')
+
+        if wish_list_pk:
+            #use this queryset to get product instances from  a particular wishlist
+            return  ProductInstance.objects.filter(wish_list_id=wish_list_pk).all()
         """
         getting products from a particular cart
         """
@@ -156,7 +161,6 @@ class OrderViewSet(ModelViewSet):
     
 class CustomerViewSet(
                       mixins.RetrieveModelMixin,
-                      mixins.ListModelMixin,
                       mixins.UpdateModelMixin,
                      GenericViewSet):
   
@@ -177,9 +181,13 @@ class CustomerWishListViewSet(
     queryset = CustomerWishList.objects.all()
     serializer_class =CustomerWishListSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['wish_list_pk'] = self.kwargs.get('wish_list_pk')
+        return context
+
+    def get_queryset(self):
+        return CustomerWishList.objects.filter(customer_id=self.request.user.id)
+
+
     
-
-
-
-
-
