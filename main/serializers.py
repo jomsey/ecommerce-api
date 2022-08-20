@@ -1,4 +1,4 @@
-from rest_framework import serializers
+from rest_framework import serializers,exceptions
 from . models import (Cart, FeaturedProduct, 
                       Product, ProductCategory, ProductInstance,
                       ProductReview,ProductSpecification,
@@ -36,7 +36,7 @@ class ProductReviewSerializer(serializers.ModelSerializer):
     
     class Meta:
         model =ProductReview
-        fields = ['customer_id','review','date_made','rating']
+        fields = ['id','customer_id','review','date_made','rating']
     
     def create(self, validated_data):
         product_pk = self.context['product_pk']
@@ -102,7 +102,7 @@ class CartSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         cart = Cart.objects.create()
 
-        #create a cart uuid seesion
+        #create a cart uuid session
         request.session['cart_uuid'] = str(cart.cart_uuid)
         request.session.modified = True
         return cart
@@ -118,9 +118,16 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
     def create(self, validated_data):
-        customer_pk = self.context['customer_pk']
-        user = self.context['request'].user #current logged user       
-        return Order.objects.create(customer_id = customer_pk, **validated_data)
+        user = self.context['request'].user #current logged user   
+
+        cart = validated_data.get('cart')
+        if cart:
+            if cart.cart_products.count() == 0:
+                raise exceptions.ValidationError({'detail':'Can not create an order with an empty cart'})
+
+            return Order.objects.create(customer_id = user.id, **validated_data)
+        raise exceptions.ValidationError("Can not create an order without a cart")
+      
 
 
 class CustomerSerializer(serializers.ModelSerializer):

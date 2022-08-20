@@ -29,7 +29,7 @@ class Customer(models.Model):
 
 
 class CustomerWishList(models.Model):
-    customer = models.OneToOneField(Customer,on_delete=models.CASCADE,null=True)
+    customer = models.OneToOneField(Customer,on_delete=models.CASCADE)
 
     @receiver(post_save,sender=Customer)
     def create_customer_wish_list(sender,instance,created,**kwargs):
@@ -58,8 +58,8 @@ class Product(models.Model):
     discount = models.PositiveIntegerField(default=0)
     product_uuid = models.UUIDField(editable=False,default=uuid4) # #unique product id
     promotion =models.ForeignKey('Promotion',on_delete=models.SET_NULL,null=True,blank=True)
-    #trader = models.ForeignKey('Trader',on_delete=models.CASCADE)
-    #date_added = models.DateField(auto_now_add=True)
+    trader = models.ForeignKey('Trader',on_delete=models.CASCADE,related_name='trader_products')
+    date_added = models.DateField(auto_now_add=True)
     
     def __str__(self):
         return self.name
@@ -69,7 +69,7 @@ class ProductInstance(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE)#product bought by customer
     product_uuid = models.UUIDField(primary_key=True,editable=False,default=uuid4) # #unique product id
     product_count = models.PositiveIntegerField(verbose_name='number of product',default=1)
-    cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True)
+    cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True,related_name='cart_products')
     wish_list =  models.ForeignKey(CustomerWishList,on_delete=models.CASCADE,blank=True,null=True,related_name='products')
     
     def __str__(self):
@@ -102,13 +102,13 @@ class ProductReview(models.Model):
     PRODUCT_EXCELLENT_RATING = 4
     
     RATE_CHOICES = [
-        (PRODUCT_VERY_POOR_RATING,'very poor'),
-        (PRODUCT_POOR_RATING,'poor'),
-        (PRODUCT_GOOD_RATING,'good'),
-        (PRODUCT_VERY_GOOD_RATING,'very good'),
-        (PRODUCT_EXCELLENT_RATING,'excellent')
+        (PRODUCT_VERY_POOR_RATING,PRODUCT_VERY_POOR_RATING),
+        (PRODUCT_POOR_RATING,PRODUCT_POOR_RATING),
+        (PRODUCT_GOOD_RATING,PRODUCT_VERY_GOOD_RATING),
+        (PRODUCT_VERY_GOOD_RATING,PRODUCT_VERY_GOOD_RATING),
+        (PRODUCT_EXCELLENT_RATING,PRODUCT_EXCELLENT_RATING)
     ]
-    customer=models.ForeignKey('Customer',on_delete= models.CASCADE,null=True) #customer making product review
+    customer=models.ForeignKey('Customer',on_delete= models.CASCADE) #customer making product review
     product = models.ForeignKey(Product,on_delete=models.CASCADE) #product being reviewed
     date_made = models.DateField(auto_now_add=True)
     review = models.TextField()
@@ -128,9 +128,9 @@ class Order(models.Model):
         ('D','Delivered')
     ]
     
-    customer = models.ForeignKey(Customer,on_delete=models.CASCADE,null=True)
+    customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
     date_made = models.DateTimeField(auto_now_add=True)
-    cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True)#contains products ordered
+    cart = models.OneToOneField(Cart,on_delete=models.CASCADE)#contains products ordered
     order_id = models.UUIDField(primary_key=True,editable=False,default=uuid4)
     status = models.CharField(max_length=1,choices=STATUS,default="P")
     is_canceled = models.BooleanField(default=False)
@@ -144,7 +144,7 @@ class Promotion(models.Model):
     description=models.TextField(null=True)
     starting_date=models.DateTimeField(auto_created=True)#will change on deploy
     ending_on = models.DateTimeField(auto_created=True)
-    #trader = models.ForeignKey('Trader',on_delete=models.CASCADE)
+    trader = models.ForeignKey('Trader',on_delete=models.CASCADE)
     
     def __str__ (self):
         return self.name
@@ -152,7 +152,6 @@ class Promotion(models.Model):
 
 class Trader(models.Model):
     profile = models.OneToOneField(User,on_delete=models.CASCADE)
-    products = models.ManyToManyField(Product)
     phone_number = models.CharField(max_length=15)
     address = models.CharField(max_length=150)
 

@@ -29,10 +29,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'rest_framework',
     'rest_framework_swagger',
     'debug_toolbar',
     'django_filters',
+    'oauth2_provider',
+    'social_django',
+    'rest_framework_social_oauth2',
+
     'main'
 ]
 
@@ -60,6 +65,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -116,7 +123,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' ,
                    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.BasicAuthentication',
                                                      'rest_framework.authentication.SessionAuthentication',
-                                                     'rest_framework_simplejwt.authentication.JWTAuthentication'
+                                                     'rest_framework_simplejwt.authentication.JWTAuthentication',
+                                                     # 'oauth2_provider.contrib.rest_framework.OAuth2Authentication',  # django-oauth-toolkit >= 1.0.0
+                                                     #  'rest_framework_social_oauth2.authentication.SocialAuthentication',
                                                     ],
                    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
                    'PAGE_SIZE': 30,
@@ -129,9 +138,25 @@ REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoS
                   }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(weeks=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(weeks=1),
-    'ROTATE_REFRESH_TOKENS': False,
-    'BLACKLIST_AFTER_ROTATION': True,
+                'ACCESS_TOKEN_LIFETIME': timedelta(weeks=1),
+                'REFRESH_TOKEN_LIFETIME': timedelta(weeks=1),
+                'ROTATE_REFRESH_TOKENS': False,
+                'BLACKLIST_AFTER_ROTATION': True,
 
 }
+
+AUTHENTICATION_BACKENDS = [
+                         'rest_framework_social_oauth2.backends.DjangoOAuth2',
+   'django.contrib.auth.backends.ModelBackend',
+  
+                        ]
+# Google configuration
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '839918766631-1vft8r58h9vsoakcuqkh2kpff20p5e6a.apps.googleusercontent.com'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
+
+# Define SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE to get extra permissions from Google.
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
+

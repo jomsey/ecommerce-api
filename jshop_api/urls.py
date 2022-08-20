@@ -12,5 +12,8 @@ urlpatterns = [
     path('api/',include("main.urls")),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path("",include_docs_urls(title="JSHOP REST API",description=description)), 
-]
+    path('api/social-auth/', include('rest_framework_social_oauth2.urls'), name='drf'),
+    path("",include_docs_urls(title="JSHOP REST API",description=description)),
+
+     ]
+

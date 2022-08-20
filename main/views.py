@@ -1,7 +1,7 @@
 import uuid
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
-from rest_framework import permissions,mixins,status
+from rest_framework import permissions,mixins,status,exceptions
 from django.shortcuts import get_object_or_404
 from main.models import (Cart, FeaturedProduct, 
                          Product, ProductInstance, 
@@ -52,13 +52,31 @@ class ProductReviewViewSet(ModelViewSet):
     def get_queryset(self):
         return ProductReview.objects.filter(product_id=self.kwargs.get('product_pk'))
     
-    
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['product_pk'] = self.kwargs.get('product_pk')
         return context
     
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self.request.user.id != instance.customer.profile.id:
+            raise exceptions.PermissionDenied('Not Authorized to delete other person\'s review')
+        super().perform_destroy(self, instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        if self.request.user.id != instance.customer.profile.id:
+                raise exceptions.PermissionDenied('Not Authorized to edit other person\'s review')
+            
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
     
+
 class ProductCategoryViewSet(ModelViewSet):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
@@ -148,9 +166,9 @@ class CartViewSet(mixins.CreateModelMixin,
 
 
     def get_queryset(self):
-        cart_uuid = self.request.session.get('cart_uuid')
-        x=uuid.UUID(cart_uuid)
-        return Cart.objects.get(cart_uuid=x)
+        # cart_uuid = self.request.session.get('cart_uuid')
+        # x=uuid.UUID(cart_uuid)
+        return Cart.objects.all()
 
     
 class OrderViewSet(ModelViewSet):
@@ -163,15 +181,14 @@ class OrderViewSet(ModelViewSet):
     """
     
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['customer_pk'] = self.kwargs.get('customer_pk')
-        return context
 
     def get_queryset(self):
-        return Order.objects.select_related('cart','customer').filter(customer_id=self.kwargs.get('customer_pk'))
+        user = self.request.user
+        if user.is_staff:
+            return Order.objects.select_related('cart','customer').all()
+        return Order.objects.select_related('cart','customer').filter(customer_id=user.id)
 
     
 class CustomerViewSet(
@@ -182,7 +199,8 @@ class CustomerViewSet(
     serializer_class =CustomerSerializer
     
     def get_queryset(self):
-        return Customer.objects.filter(profile = 3)
+        user = self.request.user
+        return Customer.objects.filter(profile=user.id)
           
         
 
