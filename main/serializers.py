@@ -1,11 +1,43 @@
 from rest_framework import serializers,exceptions
-from . models import (Cart, FeaturedProduct, 
+from drf_writable_nested.serializers import WritableNestedModelSerializer
+from . models import (Cart, CustomUser, FeaturedProduct, Trader,
                       Product, ProductCategory, ProductInstance,
                       ProductReview,ProductSpecification,
                       Promotion,Order,Customer,CustomerWishList)
 
 
+class AdminAccessUserSerializer(serializers.ModelSerializer):
+     class Meta:
+            model = CustomUser
+            fields = ['is_active','is_staff']
+            
+class EditUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id','username','first_name','last_name','password','email','phone_number','address','is_active']
+        
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(source='password',write_only=True)
+    
+    class Meta:
+        model = CustomUser
+        fields = ['id','username','password','password2','email','phone_number','address']
+      
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        # if validated_data['password'] :
+        #       raise exceptions.ValidationError
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
 
+    def update(self, instance, validated_data):
+        user = super().update(instance, validated_data)
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
+        
 class ProductSerializer(serializers.ModelSerializer):
     discounted_price = serializers.SerializerMethodField('get_discounted_price')
     class Meta:
@@ -20,20 +52,17 @@ class ProductSerializer(serializers.ModelSerializer):
         category_pk = self.context.get('category_pk')
         promotion_pk = self.context.get('promotion_pk')
 
-
         if category_pk:
-            #add a  product to a category
+            #add a  product  with a category field
             return  Product.objects.create(category_id=category_pk,**validated_data)
 
         if promotion_pk:
-            #create a product to a promotion
+            #create a product with a promotion field
             return Product.objects.create(promotion_id=promotion_pk,**validated_data)
-
         return super().create(validated_data)
 
 
 class ProductReviewSerializer(serializers.ModelSerializer):
-    
     class Meta:
         model =ProductReview
         fields = ['id','customer_id','review','date_made','rating']
@@ -64,10 +93,15 @@ class PromotionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Promotion
         fields = ['id','name','description','starting_date','ending_on']
+      
         
+class DisplayFeaturedProductSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+    class Meta:
+        model = FeaturedProduct
+        fields =[ 'product',]
         
 class FeaturedProductSerializer(serializers.ModelSerializer):
-    product = ProductSerializer()
     class Meta:
         model = FeaturedProduct
         fields =[ 'product',]
@@ -85,7 +119,6 @@ class ProductInstanceSerializer(serializers.ModelSerializer):
         if wish_list_pk:
             #adding product to wishlist
             return ProductInstance.objects.create(wishlist_id=wish_list_pk,**validated_data)
-
         #adding product to a cart
         return ProductInstance.objects.create(cart_id=cart_pk,**validated_data)
 
@@ -98,7 +131,6 @@ class CartSerializer(serializers.ModelSerializer):
 
 
     def create(self,validated_data):
-     
         request = self.context.get('request')
         cart = Cart.objects.create()
 
@@ -108,6 +140,10 @@ class CartSerializer(serializers.ModelSerializer):
         return cart
 
 
+class UpdateOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields =['status']
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -129,18 +165,20 @@ class OrderSerializer(serializers.ModelSerializer):
         raise exceptions.ValidationError("Can not create an order without a cart")
       
 
-
-class CustomerSerializer(serializers.ModelSerializer):
+class CustomerSerializer(WritableNestedModelSerializer):
+    user=UserSerializer()
     class Meta:
         model = Customer
-        fields = ['profile','phone_number','address']
+        fields = ['id','user',]
 
     
 class CustomerWishListSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CustomerWishList
         fields =['id','customer_id','products']
 
-
-
+class TraderSerializer(WritableNestedModelSerializer):
+    user=UserSerializer()
+    class Meta:
+        model = Trader
+        fields = ['id','user',]

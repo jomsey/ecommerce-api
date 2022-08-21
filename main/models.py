@@ -1,8 +1,18 @@
 from django.db import models
+from django.conf import settings
 from django.db.models.signals import post_save
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from django.dispatch import receiver
 from uuid import uuid4
+
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(verbose_name='email address',unique=True)
+    phone_number = models.CharField(max_length=15)
+    address = models.CharField(max_length=150 ,blank=True)
+    
+    class Meta(AbstractUser.Meta):
+           swappable = 'AUTH_USER_MODEL'
 
 class Cart(models.Model):
     date_created = models.DateTimeField(auto_now=True)
@@ -10,37 +20,18 @@ class Cart(models.Model):
 
 
 class Customer(models.Model):
-    profile = models.OneToOneField(User,on_delete=models.CASCADE,primary_key=True)
-    phone_number = models.CharField(max_length=10)
-    address = models.CharField(max_length=50,null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     
     def __str__(self):
-        return self.profile.username
-
-    @receiver(post_save,sender=User)
-    def create_customer(sender,instance,created,**kwargs):
-        if created:
-            Customer.objects.create(profile=instance)
-
-    @receiver(post_save,sender=User)
-    def save_customer(sender,instance,**kwargs):
-        instance.save
-    
+        return self.user.username
 
 
 class CustomerWishList(models.Model):
     customer = models.OneToOneField(Customer,on_delete=models.CASCADE)
-
-    @receiver(post_save,sender=Customer)
-    def create_customer_wish_list(sender,instance,created,**kwargs):
-        if created:
-            CustomerWishList.objects.create(customer=instance)
-
-    @receiver(post_save,sender=User)
-    def save_customer(sender,instance,**kwargs):
-        instance.save
     
-   
+    def __str__(self):
+        return f'{self.customer.user.username}-WishList'
+
     
 class FeaturedProduct(models.Model):
     product = models.ForeignKey('Product',on_delete=models.CASCADE)
@@ -151,8 +142,9 @@ class Promotion(models.Model):
 
 
 class Trader(models.Model):
-    profile = models.OneToOneField(User,on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=15)
-    address = models.CharField(max_length=150)
-
+    user = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     
+    def __str__(self):
+        return self.user.username
+    
+

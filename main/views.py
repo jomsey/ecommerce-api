@@ -2,28 +2,45 @@ import uuid
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework import permissions,mixins,status,exceptions
-from django.shortcuts import get_object_or_404
-from main.models import (Cart, FeaturedProduct, 
+from main.models import (Cart, CustomUser, FeaturedProduct, 
                          Product, ProductInstance, 
                          ProductReview,ProductCategory,
                          ProductSpecification,Promotion,
                          Order,Customer,CustomerWishList)
 from main import permissions as base_p
 from main import filters
-from main.serializers import (CartSerializer, FeaturedProductSerializer,
+from main.serializers import (AdminAccessUserSerializer, CartSerializer, DisplayFeaturedProductSerializer,
+                              EditUserSerializer, FeaturedProductSerializer,
                               ProductInstanceSerializer, PromotionSerializer,
                               ProductCategorySerializer, ProductReviewSerializer,
                               ProductSerializer,ProductSpecificationSerializer,
-                               OrderSerializer,CustomerSerializer,CustomerWishListSerializer
+                               OrderSerializer,CustomerSerializer,CustomerWishListSerializer, 
+                               UpdateOrderSerializer, UserSerializer,TraderSerializer
     )
 
+
+class CustomUserViewSet(mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins.ListModelMixin,GenericViewSet):
+    queryset = CustomUser.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        return CustomUser.objects.all() if user.is_staff else  CustomUser.objects.filter(id=user.id)
+
+    def get_serializer_class(self):
+        if self.request:
+            if self.request.method == 'PUT' or self.request.method == 'PATCH':
+                if self.request.user.is_staff:
+                    return AdminAccessUserSerializer
+                return EditUserSerializer 
+        return UserSerializer
+    
 class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
     filterset_class = filters.ProductFilter
     search_fields = ['name', 'category__name','promotion__name']
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,
                           base_p.CustomerReadOnly]
-    
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -46,6 +63,13 @@ class ProductViewSet(ModelViewSet):
             
            
 class ProductReviewViewSet(ModelViewSet):
+    """"
+    Customer reviews on products.
+    Only logged in users can make reviews.
+    Cannot delete or edit someone's reviews
+    ReadOnly to anonymous users
+    """
+    
     serializer_class = ProductReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
@@ -59,7 +83,7 @@ class ProductReviewViewSet(ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self.request.user.id != instance.customer.profile.id:
+        if self.request.user.id != instance.customer.user.id:
             raise exceptions.PermissionDenied('Not Authorized to delete other person\'s review')
         super().perform_destroy(self, instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -68,7 +92,7 @@ class ProductReviewViewSet(ModelViewSet):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
-        if self.request.user.id != instance.customer.profile.id:
+        if self.request.user.id != instance.customer.user.id:
                 raise exceptions.PermissionDenied('Not Authorized to edit other person\'s review')
             
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -86,18 +110,19 @@ class ProductCategoryViewSet(ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.product_set.count() > 0:
-            return Response({'error':'Cannot delete some instances of ProductCategory because they are referenced through protected foreign keys'},status=status.HTTP_405_METHOD_NOT_ALLOWED)    
+            return Response({'detail':'Cannot delete some instances of ProductCategory because they are referenced through protected foreign keys'},status=status.HTTP_405_METHOD_NOT_ALLOWED)    
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ProductSpecificationViewSet(mixins.CreateModelMixin,
-                                 mixins.RetrieveModelMixin,
-                                 mixins.UpdateModelMixin,
-                                 GenericViewSet):
+                                  mixins.RetrieveModelMixin,
+                                  mixins.UpdateModelMixin,
+                                  GenericViewSet):
     
     """Product specification objects should not be listed or deleted
-       Only registered and authorized users can add,edit or delete a product specification
+       Product Owner able to add,edit or delete a product specification
+       ReadOnly to all customers and anonymous users
     """
 
     queryset = ProductSpecification.objects.all()
@@ -114,20 +139,31 @@ class ProductSpecificationViewSet(mixins.CreateModelMixin,
 
 
 class PromotionViewSet(ModelViewSet):
+    """
+       ReadOnly to customers and anonymous users
+    """
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
     
     
 class FeaturedProductViewSet(ModelViewSet):
+    """
+       ReadOnly to customers and anonymous users
+    """
     queryset = FeaturedProduct.objects.select_related('product').all()
-    serializer_class = FeaturedProductSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
-    
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
+
+    def get_serializer_class(self):
+        if self.request:
+            if self.request.method == 'GET':
+                return DisplayFeaturedProductSerializer
+        return  FeaturedProductSerializer
+
+         
 class ProductInstanceViewSet(ModelViewSet):
     """
-    AnonymousUser is able to add product to the shopping cart 
+    Product to be added to the cart or wishlist
     """
     serializer_class = ProductInstanceSerializer
 
@@ -142,28 +178,23 @@ class ProductInstanceViewSet(ModelViewSet):
         if wish_list_pk:
             #use this queryset to get product instances from  a particular wishlist
             return  ProductInstance.objects.filter(wish_list_id=wish_list_pk).all()
-        """
-        getting products from a particular cart
-        """
+       
+        #getting products from a particular cart
         cart_pk=self.kwargs.get('cart_pk')
         return ProductInstance.objects.filter(cart_id=cart_pk).all()
 
-  
-    
+     
 class CartViewSet(mixins.CreateModelMixin,
-                mixins.RetrieveModelMixin,
                 GenericViewSet):
     """
-    Anonymous users should be able to create a shopping cart
+    Anonymous users can create a shopping cart
     """
     serializer_class = CartSerializer
-
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
-
 
     def get_queryset(self):
         # cart_uuid = self.request.session.get('cart_uuid')
@@ -178,11 +209,16 @@ class OrderViewSet(ModelViewSet):
     Order consists a cart with product instances.
     A user a can create more than one orders.
     User cannot make an order with an empty cart
+    User can only access to their orders unless they are super users
     """
-    
-    serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_serializer_class(self):
+        if self.request:
+            if self.request.method == 'PUT':
+                return UpdateOrderSerializer
+        return OrderSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -191,25 +227,30 @@ class OrderViewSet(ModelViewSet):
         return Order.objects.select_related('cart','customer').filter(customer_id=user.id)
 
     
-class CustomerViewSet(
-                      mixins.RetrieveModelMixin,
-                      mixins.UpdateModelMixin,
-                     GenericViewSet):
-  
+class CustomerViewSet(mixins.CreateModelMixin,GenericViewSet):
     serializer_class =CustomerSerializer
     
     def get_queryset(self):
         user = self.request.user
-        return Customer.objects.filter(profile=user.id)
+        if  user.is_staff:
+            return Customer.objects.all()
+        return Customer.objects.filter(user=user.id)
+
+class TraderViewSet(mixins.CreateModelMixin,GenericViewSet):
+    serializer_class =TraderSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        if  user.is_staff:
+            return Trader.objects.all()
+        return Trader.objects.filter(user=user.id)
           
-        
 
-
-class CustomerWishListViewSet(
-                      mixins.RetrieveModelMixin,
-                     GenericViewSet):
+class CustomerWishListViewSet(mixins.RetrieveModelMixin,GenericViewSet):
     """
-    create endpoint not provided because customer wishlist is created while creating a customer
+    Create endpoint not provided because customer wishlist is created while creating a customer.
+    Only authenticated users can create a wishList.
+    Customers should only access their wishlists.
     """
     queryset = CustomerWishList.objects.all()
     serializer_class =CustomerWishListSerializer
@@ -221,6 +262,3 @@ class CustomerWishListViewSet(
 
     def get_queryset(self):
         return CustomerWishList.objects.filter(customer_id=self.request.user.id)
-
-
-    

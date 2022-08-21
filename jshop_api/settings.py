@@ -85,7 +85,8 @@ DATABASES = {
     }
 }
 
-
+AUTH_USER_MODEL="main.CustomUser"
+swappable = 'AUTH_USER_MODEL'
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
@@ -120,6 +121,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
+
 REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' ,
                    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.BasicAuthentication',
                                                      'rest_framework.authentication.SessionAuthentication',
@@ -127,8 +129,8 @@ REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoS
                                                      # 'oauth2_provider.contrib.rest_framework.OAuth2Authentication',  # django-oauth-toolkit >= 1.0.0
                                                      #  'rest_framework_social_oauth2.authentication.SocialAuthentication',
                                                     ],
-                   'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-                   'PAGE_SIZE': 30,
+                #    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+                #    'PAGE_SIZE': 30,
                    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',
                                                'rest_framework.filters.SearchFilter'
 
@@ -146,17 +148,16 @@ SIMPLE_JWT = {
 }
 
 AUTHENTICATION_BACKENDS = [
-                         'rest_framework_social_oauth2.backends.DjangoOAuth2',
-   'django.contrib.auth.backends.ModelBackend',
-  
-                        ]
+                           'rest_framework_social_oauth2.backends.DjangoOAuth2',
+                           'django.contrib.auth.backends.ModelBackend',
+                       ]
 # Google configuration
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '839918766631-1vft8r58h9vsoakcuqkh2kpff20p5e6a.apps.googleusercontent.com'
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
 
-# Define SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE to get extra permissions from Google.
+# SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE to get extra permissions from Google.
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile',
-]
+                                    'https://www.googleapis.com/auth/userinfo.email',
+                                     'https://www.googleapis.com/auth/userinfo.user',
+                                ]
 
