@@ -1,3 +1,4 @@
+from telnetlib import STATUS
 from django.db import models
 from django.conf import settings
 from django.db.models.signals import post_save
@@ -115,19 +116,31 @@ class ProductReview(models.Model):
          
 class Order(models.Model):
     STATUS = [
-        ('P','Pending'),
-        ('D','Delivered')
+        ('Pending','Pending'),
+        ('Delivered','Delivered'),
+        ('Canceled','Canceled')
     ]
     
     customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
     date_made = models.DateTimeField(auto_now_add=True)
     cart = models.OneToOneField(Cart,on_delete=models.CASCADE)#contains products ordered
     order_id = models.UUIDField(primary_key=True,editable=False,default=uuid4)
-    status = models.CharField(max_length=1,choices=STATUS,default="P")
-    is_canceled = models.BooleanField(default=False)
+    status = models.CharField(max_length=10,choices=STATUS,default="Pending")
+  
+    def __str__(self):
+        return f'{self.customer}_order'
+    
+class Payment(models.Model):
+    STATUS = [
+        ('Pending','Pending'),
+        ('Complete','Complete')
+        
+    ]
+    payment_status = models.CharField(max_length=10,choices=STATUS,default="Pending")
+    order = models.OneToOneField(Order,on_delete=models.PROTECT)
     
     def __str__(self):
-        return str(self.order_id)
+        return f'{self.order}_payment'
     
     
 class Promotion(models.Model):
