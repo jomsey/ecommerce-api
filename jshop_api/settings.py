@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -11,17 +12,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-)@+1&z##5&l=(d9)$*&&m**75om#ev=5c0-dmdl$4#1(+=fd@o'
 
+
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
 
+ALLOWED_HOSTS = ['*']
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-# Application definition
 
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -34,12 +36,11 @@ INSTALLED_APPS = [
     'rest_framework_swagger',
     'debug_toolbar',
     'django_filters',
-    'oauth2_provider',
-    'social_django',
-    'rest_framework_social_oauth2',
 
     'main'
 ]
+
+
 
 MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
@@ -52,12 +53,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'jshop_api.urls'
+
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -65,9 +68,11 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
+            
             ],
+            'libraries' : {
+                'staticfiles': 'django.templatetags.static', 
+            }
         },
     },
 ]
@@ -77,7 +82,6 @@ WSGI_APPLICATION = 'jshop_api.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -85,11 +89,15 @@ DATABASES = {
     }
 }
 
+
+
 AUTH_USER_MODEL="main.CustomUser"
 swappable = 'AUTH_USER_MODEL'
+
+
+
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -121,16 +129,16 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
 REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' ,
+
                    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework.authentication.BasicAuthentication',
                                                      'rest_framework.authentication.SessionAuthentication',
                                                      'rest_framework_simplejwt.authentication.JWTAuthentication',
-                                                     # 'oauth2_provider.contrib.rest_framework.OAuth2Authentication',  # django-oauth-toolkit >= 1.0.0
-                                                     #  'rest_framework_social_oauth2.authentication.SocialAuthentication',
                                                     ],
-                #    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-                #    'PAGE_SIZE': 30,
+
+                   'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+                   'PAGE_SIZE': 30,
+
                    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend',
                                                'rest_framework.filters.SearchFilter'
 
@@ -138,6 +146,7 @@ REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoS
                    ,
 
                   }
+
 
 SIMPLE_JWT = {
                 'ACCESS_TOKEN_LIFETIME': timedelta(weeks=1),
@@ -147,17 +156,6 @@ SIMPLE_JWT = {
 
 }
 
-AUTHENTICATION_BACKENDS = [
-                           'rest_framework_social_oauth2.backends.DjangoOAuth2',
-                           'django.contrib.auth.backends.ModelBackend',
-                       ]
-# Google configuration
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '839918766631-1vft8r58h9vsoakcuqkh2kpff20p5e6a.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
 
-# SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE to get extra permissions from Google.
-SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
-                                    'https://www.googleapis.com/auth/userinfo.email',
-                                     'https://www.googleapis.com/auth/userinfo.user',
-                                ]
+
 

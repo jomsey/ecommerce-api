@@ -51,6 +51,8 @@ class ProductSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         category_pk = self.context.get('category_pk')
         promotion_pk = self.context.get('promotion_pk')
+        user = self.context.get('user')
+        trader = Trader.objects.get(user=user)
 
         if category_pk:
             #add a  product  with a category field
@@ -59,7 +61,7 @@ class ProductSerializer(serializers.ModelSerializer):
         if promotion_pk:
             #create a product with a promotion field
             return Product.objects.create(promotion_id=promotion_pk,**validated_data)
-        return super().create(validated_data)
+        return Product.objects.create(trader=trader,**validated_data)
 
 
 class ProductReviewSerializer(serializers.ModelSerializer):

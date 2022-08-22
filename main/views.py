@@ -31,7 +31,7 @@ class CustomUserViewSet(mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins
     def get_queryset(self):
         if self.request:
             user = self.request.user
-            return CustomUser.objects.all() if user.is_staff else  CustomUser.objects.filter(id=user.id)
+            return CustomUser.objects.prefetch_related('groups').all() if user.is_staff else  CustomUser.objects.prefetch_related('groups').filter(id=user.id)
 
     def get_serializer_class(self):
         if self.request:
@@ -53,6 +53,8 @@ class ProductViewSet(ModelViewSet):
     
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        if self.request:
+            context['user']=self.request.user
         context['category_pk'] = self.kwargs.get('category_pk')
         context['promotion_pk'] = self.kwargs.get('promotion_pk')
         return context
@@ -72,7 +74,7 @@ class ProductViewSet(ModelViewSet):
             
            
 class ProductReviewViewSet(ModelViewSet):
-    """"
+    """
     Customer reviews on products.
     Only logged in users can make reviews.
     Cannot delete or edit someone's reviews
