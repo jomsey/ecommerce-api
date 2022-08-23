@@ -42,15 +42,15 @@ class FeaturedProduct(models.Model):
     
       
 class Product(models.Model):
-    name = models.CharField(max_length=200,verbose_name='product_name')
-    price =models.PositiveIntegerField()
+    name = models.CharField(max_length=200,verbose_name='product_name',help_text='This is the name of the product')
+    price =models.PositiveIntegerField(help_text='Any positive integer number')
     description = models.TextField(max_length=1000,verbose_name='product_description')
-    image_url = models.URLField(max_length=3000)
+    image_url = models.URLField(max_length=3000,help_text='product image address')
     category  = models.ForeignKey('ProductCategory', on_delete=models.PROTECT,blank=True,null=True)
     discount = models.PositiveIntegerField(default=0)
-    product_uuid = models.UUIDField(editable=False,default=uuid4) # #unique product id
+    product_uuid = models.UUIDField(editable=False,default=uuid4,help_text='unique product identification number') # #unique product id
     promotion =models.ForeignKey('Promotion',on_delete=models.SET_NULL,null=True,blank=True)
-    trader = models.ForeignKey('Trader',on_delete=models.CASCADE,related_name='trader_products')
+    trader = models.ForeignKey('Trader',on_delete=models.CASCADE,related_name='trader_products',help_text='product merchant')
     date_added = models.DateField(auto_now_add=True)
     
     def __str__(self):

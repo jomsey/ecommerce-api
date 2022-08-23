@@ -26,8 +26,6 @@ class UserSerializer(serializers.ModelSerializer):
       
     def create(self, validated_data):
         user = super().create(validated_data)
-        # if validated_data['password'] :
-        #       raise exceptions.ValidationError
         user.set_password(validated_data['password'])
         user.save()
         return user
@@ -164,7 +162,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 raise exceptions.ValidationError({'detail':'Can not create an order with an empty cart'})
 
             return Order.objects.create(customer_id = user.id, **validated_data)
-        raise exceptions.ValidationError("Can not create an order without a cart")
+        raise exceptions.ValidationError({'detail':'Can not create an order without a cart'})
       
 
 class CustomerSerializer(WritableNestedModelSerializer):
