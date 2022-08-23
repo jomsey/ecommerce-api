@@ -16,7 +16,7 @@ description =  """This is a basic e-commerce shop REST API.It implements some of
 
 urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
-    path('debug_toolbar/',include('debug_toolbar.urls')),
+    # path('debug_toolbar/',include('debug_toolbar.urls')),
     path('admin/', admin.site.urls),
     path('api/',include("main.urls")),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
