@@ -94,7 +94,7 @@ class ProductReviewViewSet(ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self.request.user.id != instance.customer.user.id:
+        if self.request.user.id != instance.customer.id:
             raise exceptions.PermissionDenied('Not Authorized to delete other person\'s review')
         super().perform_destroy(self, instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -103,7 +103,7 @@ class ProductReviewViewSet(ModelViewSet):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         
-        if self.request.user.id != instance.customer.user.id:
+        if self.request.user.id != instance.customer.id:
                 raise exceptions.PermissionDenied('Not Authorized to edit other person\'s review')
             
         serializer = self.get_serializer(instance, data=request.data, partial=partial)

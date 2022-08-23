@@ -6,10 +6,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
 description =  """This is a basic e-commerce shop REST API.It implements some of the online shop operations, forexample
                  a user can create a cart, edit a cart ,remove and add items to a cart , can place and cancel an order,can register for an account.
                  It supports three types of user accouts;customer,traders and superusers accounts.
-                 Access to different API endpoints resources depends user authenticity and permissions
+                 Access to different API endpoints resources depends user authenticity and permissions.
 
 
-                 proudly : developed by Muwanguzi Joseph
+
+                 proudly : developed b [ Muwanguzi Joseph ]
                  muwaguzijoseph75@gmail.com
 
 """

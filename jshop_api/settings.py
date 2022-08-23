@@ -25,6 +25,7 @@ INTERNAL_IPS = [
 
 # Application definition
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -35,7 +36,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'debug_toolbar',
     'django_filters',
-     'jazzmin',
+    
 
     'main'
 ]
@@ -124,7 +125,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR/'staticfiles',]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
@@ -160,6 +161,3 @@ SIMPLE_JWT = {
 }
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-
-
