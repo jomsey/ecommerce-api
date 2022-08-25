@@ -9,6 +9,7 @@ admin.site.register(CustomerWishList)
 admin.site.register(Trader)
 admin.site.register(Promotion)
 admin.site.register(Payment)
+admin.site.register(Subcategory)
 
 
 @admin.register(CustomUser)
@@ -19,7 +20,7 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-	list_display=['name','price','category','trader']
+	list_display=['name','price','category','trader','promotion','date_added']
 
 
 @admin.register(ProductInstance)

@@ -66,18 +66,23 @@ class ProductInstance(models.Model):
     
     def __str__(self):
         return str(self.product)
-    
+ 
     
 class ProductCategory(models.Model):
     name = models.CharField(max_length=100)
+    sub_category = models.ForeignKey('Subcategory',on_delete = models.SET_NULL,null=True)
     
     def __str__(self):
         return self.name
     
     class Meta:
         verbose_name_plural = 'ProductCategories'
-    
-    
+
+class Subcategory(models.Model):
+    name = models.CharField(max_length=200,help_text='product sub category')
+
+
+  
 class ProductSpecification(models.Model):
     product = models.OneToOneField(Product,on_delete=models.CASCADE)
     weight  = models.PositiveIntegerField()
