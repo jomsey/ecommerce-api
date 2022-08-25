@@ -47,6 +47,7 @@ class Product(models.Model):
     description = models.TextField(verbose_name='product description',max_length=10000)
     image_url = models.URLField(verbose_name='image url',max_length=3000,help_text='product image address')
     category  = models.ForeignKey('ProductCategory', on_delete=models.PROTECT,blank=True,null=True)
+    subcategory = models.ForeignKey('Subcategory',on_delete=models.PROTECT,blank=True,null=True)
     discount = models.PositiveIntegerField(default=0)
     product_uuid = models.UUIDField(verbose_name='product uuid',editable=False,default=uuid4,help_text='unique product identification number') # #unique product id
     promotion =models.ForeignKey('Promotion',on_delete=models.SET_NULL,null=True,blank=True)
@@ -70,7 +71,7 @@ class ProductInstance(models.Model):
     
 class ProductCategory(models.Model):
     name = models.CharField(max_length=100)
-    sub_category = models.ForeignKey('Subcategory',on_delete = models.SET_NULL,null=True)
+    
     
     def __str__(self):
         return self.name
@@ -80,6 +81,13 @@ class ProductCategory(models.Model):
 
 class Subcategory(models.Model):
     name = models.CharField(max_length=200,help_text='product sub category')
+    category =  models.ForeignKey('ProductCategory',on_delete = models.CASCADE)
+
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        verbose_name_plural = 'Sub-categories'
 
 
   
