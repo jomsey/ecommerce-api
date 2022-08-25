@@ -7,7 +7,7 @@ from main.models import Customer,CustomerWishList,Trader,Order,Payment
 @receiver(post_save,sender=Customer)
 def create_customer_wish_list(sender,instance,created,**kwargs):
 	if created:
-            CustomerWishList.objects.create(customer=instance)
+            CustomerWishList.objects.create(customer_id=instance.id)
 
 @receiver(post_save,sender=Customer)
 def add_to_customers_group(sender,instance,created,**kwargs):

@@ -31,7 +31,7 @@ class CustomerWishList(models.Model):
     customer = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     
     def __str__(self):
-        return f'{self.customer.user.username}-WishList'
+        return f'{self.customer.username}-WishList'
 
     
 class FeaturedProduct(models.Model):
