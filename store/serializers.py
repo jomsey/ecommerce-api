@@ -1,9 +1,10 @@
 from rest_framework import serializers,exceptions
 from drf_writable_nested.serializers import WritableNestedModelSerializer
-from . models import (Cart, CustomUser, FeaturedProduct, Trader,
+from . models import (Cart, FeaturedProduct, Trader,
                       Product, ProductCategory, ProductInstance,
                       ProductReview,ProductSpecification,
                       Promotion,Order,Customer,CustomerWishList)
+from main.models import CustomUser
 
 
 class AdminAccessUserSerializer(serializers.ModelSerializer):

@@ -1,5 +1,5 @@
 from django_filters.rest_framework import FilterSet
-from main.models import Order, Product
+from .models import Order, Product
 
 class ProductFilter(FilterSet):
 	class Meta:
@@ -14,4 +14,3 @@ class OrderFilter(FilterSet):
         fields = {
 			'customer':[]
 		}
-

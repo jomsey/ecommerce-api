@@ -41,8 +41,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'django_filters',
     
-
-    'main'
+    'main',
+    'store',
 ]
 
 
@@ -89,15 +89,19 @@ WSGI_APPLICATION = 'jshop_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': env('DATABASE_NAME'),
+    #     'USER':env('DATABASE_USER'),
+    #     'PORT':5432,
+    #     'PASSWORD':env('DATABASE_PASSWORD'),
+    #     'HOST':env('HOST')
+
+
+    # }
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DATABASE_NAME'),
-        'USER':env('DATABASE_USER'),
-        'PORT':5432,
-        'PASSWORD':env('DATABASE_PASSWORD'),
-        'HOST':env('HOST')
-
-
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

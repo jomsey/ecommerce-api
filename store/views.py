@@ -2,14 +2,15 @@ import uuid
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework import permissions,mixins,status,exceptions
-from main.models import (Cart, CustomUser, FeaturedProduct, 
+from main.models import CustomUser
+from .models import (Cart, FeaturedProduct, 
                          Product, ProductInstance, Trader,
                          ProductReview,ProductCategory,
                          ProductSpecification,Promotion,
                          Order,Customer,CustomerWishList)
-from main import permissions as base_p
-from main import filters
-from main.serializers import (AdminAccessUserSerializer, CartSerializer, DisplayFeaturedProductSerializer,
+from . import permissions as base_p
+from . import filters
+from  store.serializers import (AdminAccessUserSerializer, CartSerializer, DisplayFeaturedProductSerializer,
                               EditUserSerializer, FeaturedProductSerializer,
                               ProductInstanceSerializer, PromotionSerializer,
                               ProductCategorySerializer, ProductReviewSerializer,
