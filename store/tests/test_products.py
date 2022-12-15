@@ -49,8 +49,6 @@ class TestDeleteProduct:
         response = client.post('/api/products/',{})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         
-            
-        
     def test_successful_product_delete_returns_204(self):
         pass
     

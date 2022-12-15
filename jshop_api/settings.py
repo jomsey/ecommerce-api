@@ -40,14 +40,17 @@ INSTALLED_APPS = [
     'rest_framework',
     'debug_toolbar',
     'django_filters',
+    'corsheaders',
+    'django_q',
     
     'main',
     'store',
 ]
 
 
-
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.common.CommonMiddleware",
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -171,7 +174,21 @@ SIMPLE_JWT = {
                 'REFRESH_TOKEN_LIFETIME': timedelta(weeks=1),
                 'ROTATE_REFRESH_TOKENS': False,
                 'BLACKLIST_AFTER_ROTATION': True,
-
+                 
 }
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
+# More details https://django-q.readthedocs.io/en/latest/configure.html
+Q_CLUSTER = {
+    'timeout': 60,
+    'retry': 100,
+    "name": "j-shop",
+    "orm": "default",  # Use Django's ORM + database for broker
+}
+
+
+CORS_ALLOWED_ORIGINS = [
+   'http://localhost:5173'
+]

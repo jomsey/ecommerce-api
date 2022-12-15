@@ -3,7 +3,7 @@ from . import views
 from django.urls import path,include
 
 
-router = routers.SimpleRouter()
+router = routers.DefaultRouter()
 
 #parent routers
 router.register(viewset=views.CustomerViewSet,prefix='customer',basename='customer')
@@ -16,11 +16,11 @@ router.register(viewset=views.CartViewSet,prefix='cart',basename='cart')
 router.register(viewset=views.CustomerWishListViewSet,prefix='wish_list',basename='wish_list')
 router.register(viewset=views.OrderViewSet,prefix='orders',basename='customer_orders')
 router.register(viewset=views.CustomUserViewSet,prefix='user')
+router.register(viewset=views.ProductsCollectionViewSet,prefix='collections')
 
 #product routers
 product_routers = routers.NestedSimpleRouter(router,'products',lookup='product')
 product_routers.register('reviews',views.ProductReviewViewSet,basename='reviews')
-product_routers.register('specifications',views.ProductSpecificationViewSet)
 
 #product categories routers
 category_routers = routers.NestedSimpleRouter(router,'categories',lookup='category')
@@ -32,7 +32,7 @@ promotion_routers.register('promotion_products',views.ProductViewSet,basename='p
 
 #cart routers
 cart_routers = routers.NestedSimpleRouter(router,'cart',lookup='cart')
-cart_routers.register('cart_products',views.ProductInstanceViewSet,basename='products_instances')
+cart_routers.register('products',views.ProductInstanceViewSet,basename='products_instances')
 
 #wish list routers
 wish_list_routers = routers.NestedSimpleRouter(router,'wish_list',lookup='wish_list')

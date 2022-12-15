@@ -1,19 +1,22 @@
 from django.db import models
 from django.conf import settings
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from uuid import uuid4
-from datetime import timedelta,datetime
-
+from datetime import date
 
 class Cart(models.Model):
-    date_created = models.DateTimeField(auto_now=True)
+    date_created = models.DateField(auto_now_add=True)
     cart_uuid = models.UUIDField(primary_key=True,default=uuid4)
+    
+    @property
+    def can_be_deleted(self):
+        NUMBER_OF_DAYS_TILL_DELETE = 30
+        cart_age = (date.today() - self.date_created).days
+        return cart_age>NUMBER_OF_DAYS_TILL_DELETE
 
 
 class Customer(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    
+
     def __str__(self):
         return self.user.username
 
@@ -37,9 +40,10 @@ class Product(models.Model):
     promotion =models.ForeignKey('Promotion',on_delete=models.SET_NULL,null=True,blank=True)
     trader = models.ForeignKey('Trader',on_delete=models.CASCADE,related_name='trader_products',help_text='product merchant')
     date_added = models.DateField(verbose_name='date added to store',auto_now_add=True)
-    
+
     def __str__(self):
         return self.name
+
 
 
 class ProductInstance(models.Model):
@@ -47,16 +51,18 @@ class ProductInstance(models.Model):
     product_uuid = models.UUIDField(primary_key=True,editable=False,default=uuid4) # #unique product id
     product_count = models.PositiveIntegerField(verbose_name='number of product',default=1)
     cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True,related_name='cart_products')
-    wish_list =  models.ForeignKey(CustomerWishList,on_delete=models.CASCADE,blank=True,null=True,related_name='products')
+    wish_list =  models.ForeignKey(CustomerWishList,on_delete=models.CASCADE,blank=True,null=True,related_name='wish_list_products')
     
     def __str__(self):
         return str(self.product)
+
+    class Meta:
+        ordering = ["product"]
  
     
 class ProductCategory(models.Model):
     name = models.CharField(max_length=100)
-    
-    
+
     def __str__(self):
         return self.name
     
@@ -97,6 +103,7 @@ class ProductReview(models.Model):
         (PRODUCT_VERY_GOOD_RATING,PRODUCT_VERY_GOOD_RATING),
         (PRODUCT_EXCELLENT_RATING,PRODUCT_EXCELLENT_RATING)
     ]
+    
     customer=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete= models.CASCADE) #customer making product review
     product = models.ForeignKey(Product,on_delete=models.CASCADE) #product being reviewed
     date_made = models.DateField(auto_now_add=True)
@@ -118,32 +125,26 @@ class FeaturedProduct(models.Model):
 
          
 class Order(models.Model):
-    STATUS = [
+    DELIVERY_STATUS = [
         ('Pending','Pending'),
         ('Delivered','Delivered'),
         ('Canceled','Canceled')
     ]
     
+    PAYMENT_STATUS = [
+        ('Pending','Pending'),
+        ('Complete','Complete')    
+    ]
+    
+    payment_status = models.CharField(max_length=10,choices=PAYMENT_STATUS,default="Pending")
     customer = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     date_made = models.DateTimeField(auto_now_add=True)
     cart = models.OneToOneField(Cart,on_delete=models.CASCADE)#contains products ordered
     order_id = models.UUIDField(primary_key=True,editable=False,default=uuid4)
-    status = models.CharField(max_length=10,choices=STATUS,default="Pending")
+    status = models.CharField(max_length=10,choices=DELIVERY_STATUS,default="Pending")
   
     def __str__(self):
         return f'{self.customer}_order'
-    
-class Payment(models.Model):
-    STATUS = [
-        ('Pending','Pending'),
-        ('Complete','Complete')
-        
-    ]
-    payment_status = models.CharField(max_length=10,choices=STATUS,default="Pending")
-    order = models.OneToOneField(Order,on_delete=models.PROTECT)
-    
-    def __str__(self):
-        return f'{self.order}_payment'
     
     
 class Promotion(models.Model):
@@ -162,5 +163,11 @@ class Trader(models.Model):
     
     def __str__(self):
         return self.user.username
-    
 
+
+class ProductsCollection(models.Model):
+    title = models.CharField(max_length=50)
+    products =models.ManyToManyField(Product)
+
+    def __str__(self):
+        return self.title

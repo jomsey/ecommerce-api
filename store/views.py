@@ -1,4 +1,3 @@
-import uuid
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework import permissions,mixins,status,exceptions
@@ -6,17 +5,18 @@ from main.models import CustomUser
 from .models import (Cart, FeaturedProduct, 
                          Product, ProductInstance, Trader,
                          ProductReview,ProductCategory,
-                         ProductSpecification,Promotion,
-                         Order,Customer,CustomerWishList)
+                         Promotion,
+                         Order,Customer,CustomerWishList,ProductsCollection)
 from . import permissions as base_p
 from . import filters
 from  store.serializers import (AdminAccessUserSerializer, CartSerializer, DisplayFeaturedProductSerializer,
                               EditUserSerializer, FeaturedProductSerializer,
                               ProductInstanceSerializer, PromotionSerializer,
                               ProductCategorySerializer, ProductReviewSerializer,
-                              ProductSerializer,ProductSpecificationSerializer,
+                              ProductSerializer,DetailedProductInstanceSerializer,
                                OrderSerializer,CustomerSerializer,CustomerWishListSerializer, 
-                               UpdateOrderSerializer, UserSerializer,TraderSerializer
+                               UpdateOrderSerializer, UserSerializer,TraderSerializer,ProductsCollectionSerializer,
+                               
     )
 
 
@@ -42,25 +42,29 @@ class CustomUserViewSet(mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins
                 return EditUserSerializer 
         return UserSerializer
     
+    
 class ProductViewSet(ModelViewSet):
     """
     ReadOnly for customers and anonymous users
     """
     serializer_class = ProductSerializer
     filterset_class = filters.ProductFilter
-    search_fields = ['name', 'category__name','promotion__name']
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
-                          base_p.CustomerReadOnly]
+    search_fields = ['name', 'category__name',]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     def get_serializer_context(self):
+        
         context = super().get_serializer_context()
+        
         if self.request:
             context['user']=self.request.user
+            
         context['category_pk'] = self.kwargs.get('category_pk')
         context['promotion_pk'] = self.kwargs.get('promotion_pk')
         return context
     
     def get_queryset(self):
+       
         category_pk = self.kwargs.get('category_pk')
         promotion_pk = self.kwargs.get('promotion_pk')
 
@@ -71,7 +75,7 @@ class ProductViewSet(ModelViewSet):
         if promotion_pk:
             #use this queryset to get products in a particular promotion
             return Product.objects.filter(promotion_id=promotion_pk).select_related('promotion')
-        return Product.objects.select_related('promotion','category').all()
+        return Product.objects.select_related('promotion','category','trader').all()
             
            
 class ProductReviewViewSet(ModelViewSet):
@@ -81,7 +85,7 @@ class ProductReviewViewSet(ModelViewSet):
     Cannot delete or edit someone's reviews
     ReadOnly to anonymous users
     """
-    
+
     serializer_class = ProductReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
@@ -116,7 +120,7 @@ class ProductReviewViewSet(ModelViewSet):
 class ProductCategoryViewSet(ModelViewSet):
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
     
     
     def destroy(self, request, *args, **kwargs):
@@ -126,37 +130,14 @@ class ProductCategoryViewSet(ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class ProductSpecificationViewSet(mixins.CreateModelMixin,
-                                  mixins.RetrieveModelMixin,
-                                  mixins.UpdateModelMixin,
-                                  GenericViewSet):
     
-    """Product specification objects should not be listed or deleted
-       Product Owner able to add,edit or delete a product specification
-       ReadOnly to all customers and anonymous users
-    """
-
-    queryset = ProductSpecification.objects.all()
-    serializer_class = ProductSpecificationSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
-
-    def get_serializer_context(self):
-        """
-        adding product_pk to the context to be used in retrieving  a product's specification
-        """
-        context = super().get_serializer_context()
-        context['product_pk'] = self.kwargs.get('product_pk')
-        return context
-
-
 class PromotionViewSet(ModelViewSet):
     """
        ReadOnly to customers and anonymous users
     """
     queryset = Promotion.objects.all()
     serializer_class = PromotionSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     
 class FeaturedProductViewSet(ModelViewSet):
@@ -164,7 +145,7 @@ class FeaturedProductViewSet(ModelViewSet):
        ReadOnly to customers and anonymous users
     """
     queryset = FeaturedProduct.objects.select_related('product').all()
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly,base_p.CustomerReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
 
     def get_serializer_class(self):
         if self.request:
@@ -177,7 +158,12 @@ class ProductInstanceViewSet(ModelViewSet):
     """
     Product to be added to the cart or wishlist
     """
-    serializer_class = ProductInstanceSerializer
+    
+    def get_serializer_class(self):
+        if self.request:
+            if self.request.method=='GET':
+                return DetailedProductInstanceSerializer
+        return ProductInstanceSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -193,26 +179,24 @@ class ProductInstanceViewSet(ModelViewSet):
        
         #getting products from a particular cart
         cart_pk=self.kwargs.get('cart_pk')
-        return ProductInstance.objects.filter(cart_id=cart_pk).all()
+        return ProductInstance.objects.select_related("product").filter(cart_id=cart_pk)
 
      
-class CartViewSet(mixins.CreateModelMixin,
+class CartViewSet(mixins.CreateModelMixin,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,
                 GenericViewSet):
     """
     Anonymous users can create a shopping cart
     """
     serializer_class = CartSerializer
-
+    
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
 
     def get_queryset(self):
-        # cart_uuid = self.request.session.get('cart_uuid')
-        # x=uuid.UUID(cart_uuid)
         return Cart.objects.all()
-
+    
     
 class OrderViewSet(ModelViewSet):
     """
@@ -278,3 +262,8 @@ class CustomerWishListViewSet(mixins.RetrieveModelMixin,GenericViewSet):
     def get_queryset(self):
        if self.request:
             return CustomerWishList.objects.filter(customer_id=self.request.user.id)
+
+class ProductsCollectionViewSet(ModelViewSet):
+    queryset = ProductsCollection.objects.prefetch_related("products")
+    serializer_class = ProductsCollectionSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
