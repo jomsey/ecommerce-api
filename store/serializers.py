@@ -4,6 +4,7 @@ from . models import (Cart, FeaturedProduct, Trader,
                       Product, ProductCategory, ProductInstance,
                       ProductReview,
                       Promotion,Order,Customer,CustomerWishList,ProductsCollection)
+from django.contrib.auth.password_validation import validate_password
 from main.models import CustomUser
 
 
@@ -21,16 +22,22 @@ class EditUserSerializer(serializers.ModelSerializer):
         
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(source='password',write_only=True)
-    
+    password2 = serializers.CharField(write_only = True)
+
     class Meta:
         model = CustomUser
-        fields = ['id','username','password','password2','email','phone_number','address']
+        fields = ['id','username','first_name','last_name','password','password2','email','phone_number','address']
       
+    def validate(self, data):
+        if data["password"] == data["password2"]:
+            validate_password(data["password"])
+            return super().validate(data)
+        raise serializers.ValidationError({"error":"Both password fields must be matching"})
+
     def create(self, validated_data):
-        user = super().create(validated_data)
-        user.set_password(validated_data['password'])
-        user.save()
+        user = CustomUser.objects.create_user(username=validated_data["username"],
+                                              email=validated_data["email"],
+                                              password=validated_data["password"])
         return user
 
     def update(self, instance, validated_data):
@@ -59,11 +66,7 @@ class ProductCollectionSerializer(serializers.ModelSerializer):
 
 class SimpleCartProductInstanceSerializer(serializers.ModelSerializer):
     discounted_price = serializers.SerializerMethodField('get_discounted_price')
-    # image_url = serializers.ReadOnlyField()
-    # discount = serializers.ReadOnlyField()
-    # # name = serializers.ReadOnlyField()
-    # price = serializers.ReadOnlyField()
-    
+  
     class Meta:
         model = Product
         fields = ['id','name','price','image_url','discount','discounted_price']
@@ -220,3 +223,4 @@ class ProductsCollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model =  ProductsCollection
         fields = ['id','title','products']
+

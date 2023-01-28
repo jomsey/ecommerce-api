@@ -30,12 +30,3 @@ def add_to_traders_group(sender,instance,created,**kwargs):
 @receiver(post_save,sender=Trader)
 def save_trader(sender,instance,**kwargs):
     instance.save
-    
-# @receiver(post_save,sender=Order)    
-# def create_order_payment(sender,instance,created,**kwargs):
-#         if created:
-#                 Payment.objects.create(order=instance)
-                
-# @receiver(post_save,sender=Order) 
-# def save_create_order_payment(sender,instance,**kwargs):
-#         instance.save()

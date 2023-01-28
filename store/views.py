@@ -1,38 +1,40 @@
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework import permissions,mixins,status,exceptions
-from main.models import CustomUser
 from .models import (Cart, FeaturedProduct, 
-                         Product, ProductInstance, Trader,
-                         ProductReview,ProductCategory,
-                         Promotion,
-                         Order,Customer,CustomerWishList,ProductsCollection)
-from . import permissions as base_p
-from . import filters
-from  store.serializers import (AdminAccessUserSerializer, CartSerializer, DisplayFeaturedProductSerializer,
+                     Product, ProductInstance, Trader,
+                     ProductReview,ProductCategory,Promotion,
+                    Order,Customer,CustomerWishList,ProductsCollection)
+from  store.serializers import (AdminAccessUserSerializer,
                               EditUserSerializer, FeaturedProductSerializer,
                               ProductInstanceSerializer, PromotionSerializer,
+                             CartSerializer, DisplayFeaturedProductSerializer,
                               ProductCategorySerializer, ProductReviewSerializer,
                               ProductSerializer,DetailedProductInstanceSerializer,
                                OrderSerializer,CustomerSerializer,CustomerWishListSerializer, 
-                               UpdateOrderSerializer, UserSerializer,TraderSerializer,ProductsCollectionSerializer,
-                               
-    )
+                               UpdateOrderSerializer, UserSerializer,TraderSerializer,ProductsCollectionSerializer)
+from . import filters
+from . import permissions as base_p
+from main.models import CustomUser
 
 
-class CustomUserViewSet(mixins.RetrieveModelMixin,mixins.UpdateModelMixin,mixins.ListModelMixin,GenericViewSet):
+
+class CustomUserViewSet(ModelViewSet):
     """
     Only accessed by authenticated users.
     Customers or traders have access to  only their user profiles.
     Superuser can access all user profiles.
     """
     queryset = CustomUser.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [base_p.UserPermission]
     
+    
+  
     def get_queryset(self):
         if self.request:
             user = self.request.user
-            return CustomUser.objects.prefetch_related('groups').all() if user.is_staff else  CustomUser.objects.prefetch_related('groups').filter(id=user.id)
+            return CustomUser.objects.prefetch_related('groups').all() if user.is_staff else \
+             CustomUser.objects.prefetch_related('groups').filter(id=user.id)
 
     def get_serializer_class(self):
         if self.request:
@@ -59,18 +61,17 @@ class ProductViewSet(ModelViewSet):
         if self.request:
             context['user']=self.request.user
             
-        context['category_pk'] = self.kwargs.get('category_pk')
+        context['category_name'] = self.kwargs.get('category_name')
         context['promotion_pk'] = self.kwargs.get('promotion_pk')
         return context
     
     def get_queryset(self):
-       
-        category_pk = self.kwargs.get('category_pk')
+        category_name = self.kwargs.get('category_name')
         promotion_pk = self.kwargs.get('promotion_pk')
 
-        if category_pk:
+        if category_name:
             #use this queryset to get products from  a particular category
-            return  Product.objects.filter(category_id=category_pk).select_related('category')
+            return  Product.objects.filter(category__name=category_name).select_related('category')
 
         if promotion_pk:
             #use this queryset to get products in a particular promotion
@@ -90,6 +91,7 @@ class ProductReviewViewSet(ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     
     def get_queryset(self):
+       
         return ProductReview.objects.filter(product_id=self.kwargs.get('product_pk'))
     
     def get_serializer_context(self):
@@ -118,10 +120,10 @@ class ProductReviewViewSet(ModelViewSet):
     
 
 class ProductCategoryViewSet(ModelViewSet):
+    lookup_url_kwarg ="name"
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
-    
     
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
