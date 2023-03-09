@@ -1,21 +1,22 @@
+from . import filters
+from main.models import CustomUser
+from . import permissions as base_p
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework import permissions,mixins,status,exceptions
-from .models import (Cart, FeaturedProduct, 
+from .models import (Cart, FeaturedProduct,WishListProductInstance,
                      Product, ProductInstance, Trader,
                      ProductReview,ProductCategory,Promotion,
                     Order,Customer,CustomerWishList,ProductsCollection)
-from  store.serializers import (AdminAccessUserSerializer,
+from  store.serializers import (AdminAccessUserSerializer,WishListProductInstanceSerializer,
                               EditUserSerializer, FeaturedProductSerializer,
                               ProductInstanceSerializer, PromotionSerializer,
                              CartSerializer, DisplayFeaturedProductSerializer,
                               ProductCategorySerializer, ProductReviewSerializer,
                               ProductSerializer,DetailedProductInstanceSerializer,
-                               OrderSerializer,CustomerSerializer,CustomerWishListSerializer, 
+                               OrderSerializer,CustomerSerializer,CustomerWishListSerializer,SimpleWishListProductInstanceSerializer,
                                UpdateOrderSerializer, UserSerializer,TraderSerializer,ProductsCollectionSerializer)
-from . import filters
-from . import permissions as base_p
-from main.models import CustomUser
+
 
 
 
@@ -34,7 +35,7 @@ class CustomUserViewSet(ModelViewSet):
         if self.request:
             user = self.request.user
             return CustomUser.objects.prefetch_related('groups').all() if user.is_staff else \
-             CustomUser.objects.prefetch_related('groups').filter(id=user.id)
+            CustomUser.objects.prefetch_related('groups').filter(id=user.id)
 
     def get_serializer_class(self):
         if self.request:
@@ -120,7 +121,7 @@ class ProductReviewViewSet(ModelViewSet):
     
 
 class ProductCategoryViewSet(ModelViewSet):
-    lookup_url_kwarg ="name"
+    lookup_url_kwarg = "name"
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly,]
@@ -162,8 +163,7 @@ class ProductInstanceViewSet(ModelViewSet):
     """
     
     def get_serializer_class(self):
-        if self.request:
-            if self.request.method=='GET':
+        if self.request and self.request.method=='GET':
                 return DetailedProductInstanceSerializer
         return ProductInstanceSerializer
 
@@ -173,12 +173,6 @@ class ProductInstanceViewSet(ModelViewSet):
         return context
 
     def get_queryset(self):
-        wish_list_pk = self.kwargs.get('wish_list_pk')
-
-        if wish_list_pk:
-            #use this queryset to get product instances from  a particular wishlist
-            return  ProductInstance.objects.filter(wish_list_id=wish_list_pk).all()
-       
         #getting products from a particular cart
         cart_pk=self.kwargs.get('cart_pk')
         return ProductInstance.objects.select_related("product").filter(cart_id=cart_pk)
@@ -245,15 +239,31 @@ class TraderViewSet(mixins.CreateModelMixin,GenericViewSet):
             if  user.is_staff:
                 return Trader.objects.all()
             return Trader.objects.filter(user=user.id)
-          
 
-class CustomerWishListViewSet(mixins.RetrieveModelMixin,GenericViewSet):
+class WishListProductInstanceViewSet(mixins.CreateModelMixin,
+                                     mixins.ListModelMixin,
+                                     mixins.RetrieveModelMixin,
+                                     mixins.DestroyModelMixin,
+                                     GenericViewSet):
+
+
+    def get_serializer_class(self):
+        if self.request and self.request.method == "POST":
+             return  SimpleWishListProductInstanceSerializer
+        return  WishListProductInstanceSerializer
+
+    def get_queryset(self):
+        wishlist_pk = self.kwargs.get('wish_list_pk')
+        return WishListProductInstance.objects.select_related("product").filter(wish_list=wishlist_pk)
+
+class CustomerWishListViewSet(mixins.RetrieveModelMixin,
+                              GenericViewSet):
     """
     Create endpoint not provided because customer wishlist is created while creating a customer.
     Only authenticated users can create a wishList.
     Customers should only access their wishlists.
     """
-    queryset = CustomerWishList.objects.all()
+    permission_classes = [permissions.IsAuthenticated,]
     serializer_class =CustomerWishListSerializer
 
     def get_serializer_context(self):

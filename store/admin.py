@@ -42,6 +42,11 @@ class ProductInstanceAdmin(admin.ModelAdmin):
 	list_display = ["product","product_count","product_uuid"]
 	list_per_page = 20
 
+@admin.register(WishListProductInstance)
+class WishListProductInstanceAdmin(admin.ModelAdmin):
+	list_display = ["product","product_uuid"]
+	list_per_page = 20
+
 @admin.register(ProductCategory)
 class ProductCategoryAdmin(admin.ModelAdmin):
 	pass

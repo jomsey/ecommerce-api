@@ -1,10 +1,12 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import Group
+from django.conf import settings
+
 from .models import Customer,CustomerWishList,Trader
 
 
-@receiver(post_save,sender=Customer)
+@receiver(post_save,sender=settings.AUTH_USER_MODEL)
 def create_customer_wish_list(sender,instance,created,**kwargs):
 	if created:
             CustomerWishList.objects.create(customer_id=instance.id)

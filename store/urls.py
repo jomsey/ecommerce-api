@@ -36,7 +36,7 @@ cart_routers.register('products',views.ProductInstanceViewSet,basename='products
 
 #wish list routers
 wish_list_routers = routers.NestedSimpleRouter(router,'wish_list',lookup='wish_list')
-wish_list_routers.register('wish_list_products',views.ProductInstanceViewSet,basename='products_instances')
+wish_list_routers.register('wish_list_products',views.WishListProductInstanceViewSet,basename='wishlist_products_instances')
 
 
 urlpatterns=[ 

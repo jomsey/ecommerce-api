@@ -1,11 +1,11 @@
+from main.models import CustomUser
 from rest_framework import serializers,exceptions
 from drf_writable_nested.serializers import WritableNestedModelSerializer
+from django.contrib.auth.password_validation import validate_password
 from . models import (Cart, FeaturedProduct, Trader,
                       Product, ProductCategory, ProductInstance,
-                      ProductReview,
+                      ProductReview,WishListProductInstance,
                       Promotion,Order,Customer,CustomerWishList,ProductsCollection)
-from django.contrib.auth.password_validation import validate_password
-from main.models import CustomUser
 
 
 class AdminAccessUserSerializer(serializers.ModelSerializer):
@@ -23,10 +23,13 @@ class EditUserSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only = True)
+    customerwishlist = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    
 
     class Meta:
         model = CustomUser
-        fields = ['id','username','first_name','last_name','password','password2','email','phone_number','address']
+        fields = ['id','username','first_name','last_name','password','password2','email','phone_number','address','customerwishlist']
       
     def validate(self, data):
         if data["password"] == data["password2"]:
@@ -74,6 +77,7 @@ class SimpleCartProductInstanceSerializer(serializers.ModelSerializer):
     def get_discounted_price(self,product:Product):
         discount = (product.discount/100)*product.price
         return product.price - discount
+
         
         
 class ProductSerializer(serializers.ModelSerializer):
@@ -147,12 +151,6 @@ class ProductInstanceSerializer(serializers.ModelSerializer):
        
     def create(self,validated_data):
         cart_pk =self.context.get('cart_pk')
-        wish_list_pk = self.context.get('wish_list_pk')
-
-        if wish_list_pk:
-            #adding product to wishlist
-            return ProductInstance.objects.create(wishlist_id=wish_list_pk,**validated_data)
-        #adding product to a cart
         return ProductInstance.objects.create(cart_id=cart_pk,**validated_data)
 
 
@@ -187,7 +185,6 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields =['customer','cart','order_id','status','date_made','payment_status']
 
-
     def create(self, validated_data):
         user = self.context['request'].user #current logged user   
         cart = validated_data.get('cart')
@@ -206,11 +203,6 @@ class CustomerSerializer(WritableNestedModelSerializer):
         model = Customer
         fields = ['id','user',]
 
-    
-class CustomerWishListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomerWishList
-        fields =['id','customer_id','products']
 
 class TraderSerializer(WritableNestedModelSerializer):
     user=UserSerializer()
@@ -218,9 +210,34 @@ class TraderSerializer(WritableNestedModelSerializer):
         model = Trader
         fields = ['id','user',]
 
+
 class ProductsCollectionSerializer(serializers.ModelSerializer):
     products = ProductCollectionSerializer(many=True)
     class Meta:
         model =  ProductsCollection
         fields = ['id','title','products']
 
+
+class CustomerWishListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerWishList
+        fields =['id','customer_id']
+
+
+class SimpleWishListProductSerializer(serializers.ModelSerializer):  
+    class Meta:
+        model = Product
+        fields = ['id','name','price','image_url',]
+
+
+class WishListProductInstanceSerializer(serializers.ModelSerializer):
+    product = SimpleWishListProductSerializer()
+    class Meta:
+        model = WishListProductInstance
+        fields = ["product","wish_list","product_uuid"]
+
+
+class SimpleWishListProductInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WishListProductInstance
+        fields = ["product","wish_list","product_uuid"]

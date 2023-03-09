@@ -45,13 +45,11 @@ class Product(models.Model):
         return self.name
 
 
-
 class ProductInstance(models.Model):
     product = models.ForeignKey(Product,on_delete=models.CASCADE)#product bought by customer
     product_uuid = models.UUIDField(primary_key=True,editable=False,default=uuid4) # #unique product id
     product_count = models.PositiveIntegerField(verbose_name='number of product',default=1)
-    cart = models.ForeignKey(Cart,on_delete=models.CASCADE,null=True,related_name='cart_products')
-    wish_list =  models.ForeignKey(CustomerWishList,on_delete=models.CASCADE,blank=True,null=True,related_name='wish_list_products')
+    cart = models.ForeignKey(Cart,on_delete=models.CASCADE,related_name='cart_products')
     
     def __str__(self):
         return str(self.product)
@@ -139,7 +137,7 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=10,choices=PAYMENT_STATUS,default="Pending")
     customer = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     date_made = models.DateTimeField(auto_now_add=True)
-    cart = models.OneToOneField(Cart,on_delete=models.CASCADE)#contains products ordered
+    cart = models.OneToOneField(Cart,on_delete=models.SET_NULL,null=True)#contains products ordered
     order_id = models.UUIDField(primary_key=True,editable=False,default=uuid4)
     status = models.CharField(max_length=10,choices=DELIVERY_STATUS,default="Pending")
   
@@ -171,3 +169,11 @@ class ProductsCollection(models.Model):
 
     def __str__(self):
         return self.title
+
+class WishListProductInstance(models.Model):
+    product_uuid = models.UUIDField(primary_key=True,editable=False,default=uuid4) # #unique product id
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)#product bought by customer
+    wish_list =  models.ForeignKey(CustomerWishList,on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return self.product.name
